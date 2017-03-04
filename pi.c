@@ -31,17 +31,21 @@ int main(int argc, char* argv[]) {
 
   long double ss[thNum];
 
-  long long stPerTh = num_steps / thNum;
-  // printf("stPerTh=%lld\n",stPerTh);
-
   long double step = 1.0 / (long double) num_steps;
   // printf("step=%0.50Lf\n",step);
 
+  int thNumActual = -1;
+  omp_set_num_threads(thNum);
   #pragma omp parallel
   {
     int ID = omp_get_thread_num();
     long double sum2 = 0.0;
     long double x = 0.0;
+    int thNumPriv = omp_get_num_threads();
+    if (ID==0 && thNumActual == -1) thNumActual = thNumPriv;
+
+    long long stPerTh = num_steps / thNumPriv;
+    // printf("stPerTh=%lld\n",stPerTh);
 
     long long i1 = ID * stPerTh;
     long long i2 = i1 + stPerTh;
@@ -59,12 +63,11 @@ int main(int argc, char* argv[]) {
     ss[ID] = sum2;
   }
 
-  long double sum = 0.0;
+  long double pi = 0.0;
   int i;
-  for (i=0;i<thNum;i++) {
-    sum += ss[i];
+  for (i = 0; i < thNumActual; i++) {
+    pi += ss[i] * step;
   }
 
-  long double pi = step * sum;
   printf("pi=%0.50Lf\n",pi);
 }
